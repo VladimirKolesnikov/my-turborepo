@@ -21,7 +21,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check-types": "tsc --noEmit -p tsconfig.json"
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "drizzle-orm": "^0.39.3",
@@ -31,6 +33,7 @@
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^24.0.0",
     "dotenv": "^16.4.7",
+    "dotenv-expand": "^13.0.0",
     "drizzle-kit": "^0.30.4",
     "typescript": "5.9.2"
   }

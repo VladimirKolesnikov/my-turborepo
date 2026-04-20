@@ -1,10 +1,14 @@
 import { defineConfig } from "drizzle-kit";
 import * as dotenv from "dotenv";
+import { expand } from "dotenv-expand";
 import * as path from "path";
 
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+const env = dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+expand(env);
 
-const databaseUrl = process.env.DATABASE_URL || `postgres://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`;
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) throw new Error('Missing database url');
 
 export default defineConfig({
   schema: "./src/schema.ts",
