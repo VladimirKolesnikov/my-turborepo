@@ -1,4 +1,4 @@
-import { type JSX } from "react";
+import type { JSX, ReactNode } from "react";
 
 export function Card({
   className,
@@ -8,13 +8,13 @@ export function Card({
 }: {
   className?: string;
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
   href: string;
 }): JSX.Element {
   return (
     <a
       className={className}
-      href={`${href}?utm_source=create-turbo&utm_medium=basic&utm_campaign=create-turbo"`}
+      href={`${href}?utm_source=create-turbo&utm_medium=basic&utm_campaign=create-turbo`}
       rel="noopener noreferrer"
       target="_blank"
     >
