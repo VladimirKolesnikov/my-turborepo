@@ -1,0 +1,1 @@
+DROP TABLE "parsed_files" CASCADE;

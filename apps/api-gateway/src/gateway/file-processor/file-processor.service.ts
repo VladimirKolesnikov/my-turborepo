@@ -1,18 +1,20 @@
-import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { TxtParserStrategy } from './strategies/txt-parser.strategy';
-import { createDatabase, parsedFiles } from '@repo/database';
+import { transactions } from '@repo/database';
+import { DATABASE_CONNECTION } from '../database/database.constants';
+
+// const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
+const TEMP_WALLET_ID = '00000000-0000-0000-0000-000000000001';
 
 @Injectable()
-export class FileProcessorService implements OnModuleInit {
-  private db;
+export class FileProcessorService {
+  constructor(
+    private readonly txtStrategy: TxtParserStrategy,
+    @Inject(DATABASE_CONNECTION)
+    private readonly db,
+  ) { }
 
-  constructor(private readonly txtStrategy: TxtParserStrategy) {}
-
-  onModuleInit() {
-    this.db = createDatabase();
-  }
-
-  async processFile(userId: string, mimetype: string, buffer: Buffer): Promise<any> {
+  async processFile(userId: string, mimetype: string, buffer: Buffer): Promise<{ raw_content: string }> {
     let parsedText: string;
 
     switch (mimetype) {
@@ -23,11 +25,13 @@ export class FileProcessorService implements OnModuleInit {
         throw new BadRequestException('Unsupported mimetype');
     }
 
-    const resultObject = { message: parsedText };
+    const resultObject = { raw_content: parsedText };
 
-    await this.db.insert(parsedFiles).values({
+    await this.db.insert(transactions).values({
       userId,
-      content: resultObject,
+      walletId: TEMP_WALLET_ID,
+      amount: '0',
+      rawContent: parsedText,
     });
 
     return resultObject;

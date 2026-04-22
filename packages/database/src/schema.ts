@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-import { pgTable, text, timestamp, uuid, jsonb, varchar } from "drizzle-orm/pg-core";
-=======
 import {
   index,
   pgTable,
@@ -11,6 +8,7 @@ import {
   varchar,
   vector,
   text,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -39,7 +37,6 @@ export const categoryTypes = pgTable("category_types", {
   code: varchar("code", { length: 50 }).primaryKey(),
   label: varchar("label", { length: 255 }).notNull(),
 });
->>>>>>> origin/main
 
 export const users = pgTable("users", {
   id: id(),
@@ -56,15 +53,6 @@ export const users = pgTable("users", {
   }).default("0"),
   ...timestamps(),
 });
-
-<<<<<<< HEAD
-export const parsedFiles = pgTable("parsed_files", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: varchar("user_id").notNull(),
-  content: jsonb("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-=======
 
 export const wallets = pgTable("wallets", {
   id: id(),
@@ -218,4 +206,4 @@ export const embeddingsRelations = relations(
     }),
   }),
 );
->>>>>>> origin/main
+
