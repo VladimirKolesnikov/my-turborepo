@@ -1,6 +1,5 @@
 import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { AppService } from './app.service';
 import { FileProcessorService } from './gateway/file-processor/file-processor.service';
 
 const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
@@ -9,12 +8,11 @@ const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
 export class AppController {
   constructor(
     private readonly fileProcessorService: FileProcessorService,
-    private readonly appService: AppService,
   ) { }
 
   @Get('hello')
   hello() {
-    return this.appService.getHello();
+    return "Hello";
   }
 
   @Post('upload')
