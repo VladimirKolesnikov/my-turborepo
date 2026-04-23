@@ -1,16 +1,16 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import * as schema from "./schema";
 
 export * from "drizzle-orm";
 export * from "./schema";
+export type databaseType = PostgresJsDatabase<typeof schema>;
 
 export function getDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string {
   if (env.DATABASE_URL) {
     return env.DATABASE_URL;
   }
-
   const parts = [
     env.POSTGRES_USER,
     env.POSTGRES_PASSWORD,
