@@ -8,7 +8,10 @@ export * from "./schema";
 export type databaseType = PostgresJsDatabase<typeof schema>;
 
 export function getDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string {
-  if (env.DATABASE_URL) {
+  // Accept DATABASE_URL only when it looks like a real URL.
+  // dotenv does not interpolate shell variables, so a value like
+  // "postgres://${POSTGRES_USER}:..." must be ignored.
+  if (env.DATABASE_URL && !env.DATABASE_URL.includes("${")) {
     return env.DATABASE_URL;
   }
   const parts = [

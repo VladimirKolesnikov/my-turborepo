@@ -5,16 +5,18 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AiProcessorModule } from './ai-processor/ai-processor.module';
 import { DatabaseModule } from './database/database.module';
-import { QueueModule } from './queue-processor/queue.module'
+import { QueueModule } from './queue-processor/queue.module';
 import { LlmModule } from './llm/llm.module';
+import { TestModule } from './test/test.module';
 
 @Module({
   imports: [
-    BullModule.forRoot({ connection: getRedisConfig()}),
+    BullModule.forRoot({ connection: getRedisConfig() }),
+    DatabaseModule,
+    LlmModule,
     AiProcessorModule,
     QueueModule,
-    DatabaseModule,
-    LlmModule
+    TestModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -17,6 +17,8 @@ const CategorizedTransactionSchema = z.object({
 
 export type CategorizedTransaction = z.infer<typeof CategorizedTransactionSchema>;
 
+const RETRY_DELAYS_MS = [3000, 8000, 20000]; // 3s, 8s, 20s
+
 @Injectable()
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
@@ -34,19 +36,56 @@ export class LlmService {
     this.embeddingModel = process.env.OPENROUTER_EMBEDDING_MODEL ?? 'openai/text-embedding-3-small';
   }
 
+  private isRateLimitError(err: unknown): boolean {
+    // OpenRouterError base class exposes statusCode — duck-type instead of
+    // importing subclasses which aren't resolvable under this moduleResolution setting.
+    return (
+      typeof err === 'object' &&
+      err !== null &&
+      'statusCode' in err &&
+      (err as { statusCode: number }).statusCode === 429
+    );
+  }
+
+  private async withRetry<T>(label: string, fn: () => Promise<T>): Promise<T> {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        if (!this.isRateLimitError(err)) throw err;
+
+        lastError = err;
+        const delay = RETRY_DELAYS_MS[attempt];
+
+        if (delay === undefined) break;
+
+        this.logger.warn(
+          `${label} rate-limited (attempt ${attempt + 1}/${RETRY_DELAYS_MS.length + 1}), retrying in ${delay / 1000}s…`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    throw lastError;
+  }
+
   async cleanUserMessage(rawContent: string): Promise<string> {
     this.logger.debug('Cleaning user message');
 
-    const result = await this.client.chat.send({
-      chatRequest: {
-        model: this.chatModel,
-        messages: [
-          { role: 'system', content: CLEAN_USER_MESSAGE_PROMPT },
-          { role: 'user', content: rawContent },
-        ],
-        temperature: 0,
-      },
-    });
+    const result = await this.withRetry('cleanUserMessage', () =>
+      this.client.chat.send({
+        chatRequest: {
+          model: this.chatModel,
+          messages: [
+            { role: 'system', content: CLEAN_USER_MESSAGE_PROMPT },
+            { role: 'user', content: rawContent },
+          ],
+          temperature: 0,
+        },
+      }),
+    );
 
     const text = result.choices[0]?.message?.content;
     if (typeof text !== 'string' || text.trim() === '') {
@@ -64,12 +103,14 @@ export class LlmService {
   async generateEmbedding(text: string): Promise<number[]> {
     this.logger.debug('Generating embedding');
 
-    const result = await this.client.embeddings.generate({
-      requestBody: {
-        model: this.embeddingModel,
-        input: text,
-      },
-    });
+    const result = await this.withRetry('generateEmbedding', () =>
+      this.client.embeddings.generate({
+        requestBody: {
+          model: this.embeddingModel,
+          input: text,
+        },
+      }),
+    );
 
     if (typeof result === 'string') {
       throw new Error('Unexpected string response from embeddings API');
@@ -98,17 +139,19 @@ export class LlmService {
 
     const userMessage = `Past confirmed transactions:\n${contextBlock}\n\nNew transaction to categorize:\n"${cleanedText}"`;
 
-    const result = await this.client.chat.send({
-      chatRequest: {
-        model: this.chatModel,
-        messages: [
-          { role: 'system', content: CATEGORIZE_TRANSACTION_PROMPT },
-          { role: 'user', content: userMessage },
-        ],
-        temperature: 0,
-        responseFormat: { type: 'json_object' },
-      },
-    });
+    const result = await this.withRetry('categorizeTransaction', () =>
+      this.client.chat.send({
+        chatRequest: {
+          model: this.chatModel,
+          messages: [
+            { role: 'system', content: CATEGORIZE_TRANSACTION_PROMPT },
+            { role: 'user', content: userMessage },
+          ],
+          temperature: 0,
+          responseFormat: { type: 'json_object' },
+        },
+      }),
+    );
 
     const text = result.choices[0]?.message?.content;
     if (typeof text !== 'string' || text.trim() === '') {
@@ -116,6 +159,8 @@ export class LlmService {
     }
 
     const parsed: unknown = JSON.parse(text);
-    return CategorizedTransactionSchema.parse(parsed);
+    // Some models return an array despite json_object being requested — unwrap it.
+    const candidate = Array.isArray(parsed) ? parsed[0] : parsed;
+    return CategorizedTransactionSchema.parse(candidate);
   }
 }
