@@ -1,15 +1,31 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { eq, sql } from '@repo/database';
+import { transactions, transactionEmbeddings } from '@repo/database';
 import { DatabaseService } from '../database/database.service';
-import { eq } from 'drizzle-orm';
-import { transactions } from '@repo/database';
+import { LlmService } from '../llm/llm.service';
+
+export interface ProcessedTransactionResult {
+  transactionId: string;
+  categoryName: string;
+  cleanedDescription: string;
+  amount: string;
+  currency: string | null;
+  confidence: number;
+}
 
 @Injectable()
 export class AiProcessorService {
+  private readonly logger = new Logger(AiProcessorService.name);
 
-  constructor(private databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly llmService: LlmService,
+  ) {}
 
-  public async process(transactionId: string) {
+  async process(transactionId: string): Promise<ProcessedTransactionResult> {
+    this.logger.log(`Processing transaction ${transactionId}`);
 
+    // 1. Fetch transaction
     const [transaction] = await this.databaseService.db
       .select()
       .from(transactions)
@@ -19,13 +35,46 @@ export class AiProcessorService {
       throw new NotFoundException(`Transaction ${transactionId} not found`);
     }
 
-    const embeddig = this.cleanUserMessage(transaction.rawContent);
+    // 2. Extract only financial content from raw user message
+    const cleanedText = await this.llmService.cleanUserMessage(transaction.rawContent);
+    this.logger.debug(`Cleaned message: "${cleanedText}"`);
 
+    // 3. Generate embedding from cleaned text
+    const embedding = await this.llmService.generateEmbedding(cleanedText);
 
+    // 4. Vector similarity search for RAG context (confirmed/completed transactions)
+    const ragContext = await this.databaseService.db
+      .select({
+        content: transactionEmbeddings.content,
+        confirmedCategoryName: transactionEmbeddings.confirmedCategoryName,
+      })
+      .from(transactionEmbeddings)
+      .where(eq(transactionEmbeddings.userId, transaction.userId))
+      .orderBy(sql`embedding <=> ${JSON.stringify(embedding)}::vector`)
+      .limit(5);
+
+    this.logger.debug(`Found ${ragContext.length} RAG context items`);
+
+    // 5. Categorize transaction using LLM with RAG context
+    const categorized = await this.llmService.categorizeTransaction(cleanedText, ragContext);
+
+    // 6. Mark transaction as pending_confirmation
+    await this.databaseService.db
+      .update(transactions)
+      .set({ statusCode: 'pending_confirmation' })
+      .where(eq(transactions.id, transactionId));
+
+    this.logger.log(
+      `Transaction ${transactionId} processed — category: "${categorized.categoryName}", confidence: ${categorized.confidence}`,
+    );
+
+    return {
+      transactionId,
+      categoryName: categorized.categoryName,
+      cleanedDescription: categorized.description,
+      amount: transaction.amount,
+      currency: transaction.currency,
+      confidence: categorized.confidence,
+    };
   }
-
-  private async cleanUserMessage(rawText: string): Promise<string> {
-    return 'Message'
-  }
-
 }
