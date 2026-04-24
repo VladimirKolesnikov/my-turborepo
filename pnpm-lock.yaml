@@ -44,6 +44,9 @@ importers:
       '@openrouter/sdk':
         specifier: ^0.12.20
         version: 0.12.20
+      '@repo/constants':
+        specifier: workspace:*
+        version: link:../../packages/constants
       '@repo/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -248,6 +251,15 @@ importers:
       eslint:
         specifier: ^9.39.1
         version: 9.39.4
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
+  packages/constants:
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       typescript:
         specifier: 5.9.2
         version: 5.9.2

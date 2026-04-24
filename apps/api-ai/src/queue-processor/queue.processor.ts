@@ -2,9 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AiProcessorService, ProcessedTransactionResult } from '../ai-processor/ai-processor.service';
-
-// NOTE: The api-gateway producer must publish jobs to the same queue name.
-export const TRANSACTION_PROCESSING_QUEUE = 'transaction-processing';
+import { TRANSACTION_PROCESSING_QUEUE } from '@repo/constants';
 
 export interface ProcessTransactionJobData {
   transactionId: string;

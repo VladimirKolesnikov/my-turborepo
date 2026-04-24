@@ -77,7 +77,7 @@ export class AiProcessorService {
       transactionId,
       categoryName: categorized.categoryName,
       cleanedDescription: categorized.description,
-      amount: transaction.amount,
+      amount: transaction.amount ?? '0',
       currency: transaction.currency,
       confidence: categorized.confidence,
     };
