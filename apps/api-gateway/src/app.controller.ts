@@ -1,8 +1,7 @@
 import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { BOOTSTRAP_USER_ID } from '@repo/database';
 import { FileProcessorService } from './gateway/file-processor/file-processor.service';
-
-const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 @Controller()
 export class AppController {
@@ -28,7 +27,7 @@ export class AppController {
     }
 
     const result = await this.fileProcessorService.processFile(
-      TEMP_USER_ID,
+      BOOTSTRAP_USER_ID,
       file.mimetype,
       file.buffer,
     );

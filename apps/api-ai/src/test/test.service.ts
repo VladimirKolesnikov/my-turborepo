@@ -1,17 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { sql } from '@repo/database';
 import {
-  users,
-  wallets,
-  walletTypes,
-  transactionStatuses,
+  BOOTSTRAP_SPENDING_WALLET_ID,
+  BOOTSTRAP_USER_ID,
+  DEFAULT_CURRENCY,
+  TRANSACTION_STATUS_PENDING,
   transactions,
+  sql,
 } from '@repo/database';
 import { DatabaseService } from '../database/database.service';
 import { AiProcessorService, ProcessedTransactionResult } from '../ai-processor/ai-processor.service';
-
-const MOCK_USER_ID = '00000000-0000-0000-0000-000000000001';
-const MOCK_WALLET_ID = '00000000-0000-0000-0000-000000000002';
 
 const MOCK_MESSAGES = [
   "Today I went for a walk with my dog. Later met friends at a bar and spent $100 there.",
@@ -31,45 +28,6 @@ export class TestService {
   async seedAndProcess(rawContent?: string): Promise<ProcessedTransactionResult> {
     const db = this.databaseService.db;
 
-    // Ensure lookup table rows exist
-    await db
-      .insert(walletTypes)
-      .values({ code: 'personal', label: 'Personal' })
-      .onConflictDoNothing();
-
-    await db
-      .insert(transactionStatuses)
-      .values([
-        { code: 'pending', label: 'Pending' },
-        { code: 'pending_confirmation', label: 'Pending Confirmation' },
-        { code: 'confirmed', label: 'Confirmed' },
-      ])
-      .onConflictDoNothing();
-
-    // Ensure mock user exists
-    await db
-      .insert(users)
-      .values({
-        id: MOCK_USER_ID,
-        username: 'test_user',
-        email: 'test@neoxi.local',
-        passwordHash: 'not-a-real-hash',
-      })
-      .onConflictDoNothing();
-
-    // Ensure mock wallet exists
-    await db
-      .insert(wallets)
-      .values({
-        id: MOCK_WALLET_ID,
-        userId: MOCK_USER_ID,
-        name: 'Test Wallet',
-        balance: '10000',
-        currency: 'USD',
-        typeCode: 'personal',
-      })
-      .onConflictDoNothing();
-
     const randomMessage = MOCK_MESSAGES[Math.floor(Math.random() * MOCK_MESSAGES.length)]!;
     const message: string = rawContent ?? randomMessage;
 
@@ -77,12 +35,12 @@ export class TestService {
     const rows = await db
       .insert(transactions)
       .values({
-        userId: MOCK_USER_ID,
-        walletId: MOCK_WALLET_ID,
+        userId: BOOTSTRAP_USER_ID,
+        walletId: BOOTSTRAP_SPENDING_WALLET_ID,
         amount: '0',
-        currency: 'USD',
+        currency: DEFAULT_CURRENCY,
         rawContent: message,
-        statusCode: 'pending',
+        statusCode: TRANSACTION_STATUS_PENDING,
       })
       .returning({ id: transactions.id });
 
@@ -108,7 +66,7 @@ export class TestService {
         createdAt: transactions.createdAt,
       })
       .from(transactions)
-      .where(sql`user_id = ${MOCK_USER_ID}`)
+      .where(sql`user_id = ${BOOTSTRAP_USER_ID}`)
       .orderBy(sql`created_at DESC`)
       .limit(10);
   }
