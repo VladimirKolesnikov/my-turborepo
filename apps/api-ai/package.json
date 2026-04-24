@@ -26,6 +26,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@openrouter/sdk": "^0.12.20",
+    "@repo/constants": "workspace:*",
     "@repo/database": "workspace:*",
     "@repo/redis": "workspace:*",
     "bullmq": "^5.74.2",
