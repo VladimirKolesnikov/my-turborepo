@@ -1,5 +1,19 @@
 import { createDatabase } from "./index";
 import * as schema from "./schema";
+import {
+  BOOTSTRAP_INCOMING_WALLET_ID,
+  BOOTSTRAP_SPENDING_WALLET_ID,
+  BOOTSTRAP_USER_ID,
+  CATEGORY_TYPE_EXPENSE,
+  CATEGORY_TYPE_INCOME,
+  DEFAULT_CURRENCY,
+  TRANSACTION_STATUS_CONFIRMED,
+  TRANSACTION_STATUS_FAILED,
+  TRANSACTION_STATUS_PENDING,
+  TRANSACTION_STATUS_PENDING_CONFIRMATION,
+  WALLET_TYPE_INCOMING,
+  WALLET_TYPE_SPENDING,
+} from "./bootstrap";
 import * as dotenv from "dotenv";
 import { expand } from "dotenv-expand";
 import * as path from "path";
@@ -12,53 +26,101 @@ async function main() {
 
   const db = createDatabase();
 
-  console.log("Inserting test user...");
-
-  await db.insert(schema.users).values({
-    id: "00000000-0000-0000-0000-000000000001",
-    username: "Test User",
-    email: "test@example.com",
-    passwordHash: "password_hash",
-  }).onConflictDoUpdate({
-    target: schema.users.id,
-    set: {
-      username: "Test User",
-      email: "test@example.com",
-    }
-  });
-
   console.log("Inserting wallet types...");
 
-  await db.insert(schema.walletTypes).values([
-    { code: "bank", label: "Monobank" },]).onConflictDoNothing();
+  await db
+    .insert(schema.walletTypes)
+    .values([
+      { code: WALLET_TYPE_SPENDING, label: "Spending" },
+      { code: WALLET_TYPE_INCOMING, label: "Incoming" },
+    ])
+    .onConflictDoNothing();
 
   console.log("Inserting transaction statuses...");
 
-  await db.insert(schema.transactionStatuses).values([
-    { code: "pending", label: "Pending" },
-    { code: "waiting", label: "Waiting" },
-    { code: "active", label: "Active" },
-    { code: "completed", label: "Completed" },
-    { code: "failed", label: "Failed" },
-  ]).onConflictDoNothing();
+  await db
+    .insert(schema.transactionStatuses)
+    .values([
+      { code: TRANSACTION_STATUS_PENDING, label: "Pending" },
+      {
+        code: TRANSACTION_STATUS_PENDING_CONFIRMATION,
+        label: "Pending Confirmation",
+      },
+      { code: TRANSACTION_STATUS_CONFIRMED, label: "Confirmed" },
+      { code: TRANSACTION_STATUS_FAILED, label: "Failed" },
+    ])
+    .onConflictDoNothing();
 
-  console.log("Inserting test wallet...");
+  console.log("Inserting category types...");
 
-  await db.insert(schema.wallets).values({
-    id: "00000000-0000-0000-0000-000000000001",
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Test Wallet",
-    typeCode: "bank",
-    currency: "USD",
-    balance: "0",
-  }).onConflictDoUpdate({
-    target: schema.wallets.id,
-    set: {
-      name: "Test Wallet",
-      typeCode: "bank",
-      currency: "USD",
-    }
-  });
+  await db
+    .insert(schema.categoryTypes)
+    .values([
+      { code: CATEGORY_TYPE_EXPENSE, label: "Expense" },
+      { code: CATEGORY_TYPE_INCOME, label: "Income" },
+    ])
+    .onConflictDoNothing();
+
+  console.log("Inserting bootstrap user...");
+
+  await db
+    .insert(schema.users)
+    .values({
+      id: BOOTSTRAP_USER_ID,
+      username: "bootstrap-user",
+      email: "bootstrap@neoxi.local",
+    })
+    .onConflictDoUpdate({
+      target: schema.users.id,
+      set: {
+        username: "bootstrap-user",
+        email: "bootstrap@neoxi.local",
+      },
+    });
+
+  console.log("Inserting bootstrap wallets...");
+
+  await db
+    .insert(schema.wallets)
+    .values({
+      id: BOOTSTRAP_SPENDING_WALLET_ID,
+      userId: BOOTSTRAP_USER_ID,
+      name: "Default Spending Wallet",
+      typeCode: WALLET_TYPE_SPENDING,
+      currency: DEFAULT_CURRENCY,
+      balance: "0",
+    })
+    .onConflictDoUpdate({
+      target: schema.wallets.id,
+      set: {
+        userId: BOOTSTRAP_USER_ID,
+        name: "Default Spending Wallet",
+        typeCode: WALLET_TYPE_SPENDING,
+        currency: DEFAULT_CURRENCY,
+        balance: "0",
+      },
+    });
+
+  await db
+    .insert(schema.wallets)
+    .values({
+      id: BOOTSTRAP_INCOMING_WALLET_ID,
+      userId: BOOTSTRAP_USER_ID,
+      name: "Default Incoming Wallet",
+      typeCode: WALLET_TYPE_INCOMING,
+      currency: DEFAULT_CURRENCY,
+      balance: "0",
+    })
+    .onConflictDoUpdate({
+      target: schema.wallets.id,
+      set: {
+        userId: BOOTSTRAP_USER_ID,
+        name: "Default Incoming Wallet",
+        typeCode: WALLET_TYPE_INCOMING,
+        currency: DEFAULT_CURRENCY,
+        balance: "0",
+      },
+    });
 
   console.log("------------------- Seed finished! -------------------");
 }

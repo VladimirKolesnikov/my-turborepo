@@ -1,6 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { eq, sql } from '@repo/database';
-import { transactions, transactionEmbeddings } from '@repo/database';
+import {
+  eq,
+  sql,
+  transactions,
+  transactionEmbeddings,
+  TRANSACTION_STATUS_PENDING_CONFIRMATION,
+} from '@repo/database';
 import { DatabaseService } from '../database/database.service';
 import { LlmService } from '../llm/llm.service';
 
@@ -61,7 +66,7 @@ export class AiProcessorService {
     // 6. Mark transaction as pending_confirmation
     await this.databaseService.db
       .update(transactions)
-      .set({ statusCode: 'pending_confirmation' })
+      .set({ statusCode: TRANSACTION_STATUS_PENDING_CONFIRMATION })
       .where(eq(transactions.id, transactionId));
 
     this.logger.log(

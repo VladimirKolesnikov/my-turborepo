@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776763666288,
-      "tag": "0000_aberrant_warpath",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776764943230,
-      "tag": "0001_loose_ozymandias",
+      "when": 1777024099067,
+      "tag": "0000_perpetual_jamie_braddock",
       "breakpoints": true
     }
   ]

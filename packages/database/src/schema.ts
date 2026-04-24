@@ -1,14 +1,13 @@
 import {
   index,
-  pgTable,
   numeric,
+  pgTable,
   timestamp,
-  uuid,
+  text,
   uniqueIndex,
+  uuid,
   varchar,
   vector,
-  text,
-  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -42,7 +41,7 @@ export const users = pgTable("users", {
   id: id(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   email: varchar("email", { length: 255 }).unique(),
-  passwordHash: text("password_hash").notNull(),
+  passwordHash: text("password_hash"),
   totalSpendings: numeric("total_spendings", {
     precision: 14,
     scale: 2,
@@ -66,7 +65,7 @@ export const wallets = pgTable("wallets", {
     precision: 14,
     scale: 2,
   }).default("0"),
-  currency: varchar("currency", { length: 10 }).default("USD"),
+  currency: varchar("currency", { length: 10 }).default("USD").notNull(),
   typeCode: varchar("type_code", { length: 50 })
     .notNull()
     .references(() => walletTypes.code),
@@ -103,10 +102,11 @@ export const transactions = pgTable("transactions", {
   amount: numeric("amount", {
     precision: 14,
     scale: 2,
-  }).notNull(),
-  currency: varchar("currency", { length: 10 }).default("USD"),
+  }),
+  currency: varchar("currency", { length: 10 }).default("USD").notNull(),
   rawContent: text("raw_content").notNull(),
   statusCode: varchar("status_code", { length: 50 })
+    .notNull()
     .default("pending")
     .references(() => transactionStatuses.code),
   ...timestamps(),
@@ -206,4 +206,3 @@ export const embeddingsRelations = relations(
     }),
   }),
 );
-

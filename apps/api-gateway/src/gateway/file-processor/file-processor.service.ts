@@ -1,14 +1,16 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { TxtParserStrategy } from './strategies/txt-parser.strategy';
-import { CsvParserStrategy } from './strategies/csv-parser.strategy';
-import { transactions } from '@repo/database';
+import {
+  BOOTSTRAP_SPENDING_WALLET_ID,
+  DEFAULT_CURRENCY,
+  TRANSACTION_STATUS_PENDING,
+  transactions,
+} from '@repo/database';
 import { DATABASE_CONNECTION } from '../database/database.constants';
 import { TRANSACTIONS_QUEUE } from '../queue/queue.constants';
-
-// const TEMP_USER_ID = '00000000-0000-0000-0000-000000000001';
-const TEMP_WALLET_ID = '00000000-0000-0000-0000-000000000001';
+import { TxtParserStrategy } from './strategies/txt-parser.strategy';
+import { CsvParserStrategy } from './strategies/csv-parser.strategy';
 
 @Injectable()
 export class FileProcessorService {
@@ -45,9 +47,10 @@ export class FileProcessorService {
       .insert(transactions)
       .values({
         userId,
-        walletId: TEMP_WALLET_ID,
-        amount: '0',
+        walletId: BOOTSTRAP_SPENDING_WALLET_ID,
+        currency: DEFAULT_CURRENCY,
         rawContent: parsedText,
+        statusCode: TRANSACTION_STATUS_PENDING,
       })
       .returning({ id: transactions.id });
 

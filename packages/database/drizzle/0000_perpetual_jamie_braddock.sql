@@ -12,13 +12,6 @@ CREATE TABLE "category_types" (
 	"label" varchar(255) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "parsed_files" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" varchar NOT NULL,
-	"content" jsonb NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "transaction_embeddings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -40,10 +33,10 @@ CREATE TABLE "transactions" (
 	"user_id" uuid NOT NULL,
 	"wallet_id" uuid NOT NULL,
 	"category_id" uuid,
-	"amount" numeric(14, 2) NOT NULL,
-	"currency" varchar(10) DEFAULT 'USD',
+	"amount" numeric(14, 2),
+	"currency" varchar(10) DEFAULT 'USD' NOT NULL,
 	"raw_content" text NOT NULL,
-	"status_code" varchar(50) DEFAULT 'pending',
+	"status_code" varchar(50) DEFAULT 'pending' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -52,7 +45,7 @@ CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"username" varchar(255) NOT NULL,
 	"email" varchar(255),
-	"password_hash" text NOT NULL,
+	"password_hash" text,
 	"total_spendings" numeric(14, 2) DEFAULT '0',
 	"total_income" numeric(14, 2) DEFAULT '0',
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -71,7 +64,7 @@ CREATE TABLE "wallets" (
 	"user_id" uuid NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"balance" numeric(14, 2) DEFAULT '0',
-	"currency" varchar(10) DEFAULT 'USD',
+	"currency" varchar(10) DEFAULT 'USD' NOT NULL,
 	"type_code" varchar(50) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL

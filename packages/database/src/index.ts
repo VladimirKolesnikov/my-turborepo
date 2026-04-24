@@ -4,6 +4,7 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 export * from "drizzle-orm";
+export * from "./bootstrap";
 export * from "./schema";
 export type databaseType = PostgresJsDatabase<typeof schema>;
 
