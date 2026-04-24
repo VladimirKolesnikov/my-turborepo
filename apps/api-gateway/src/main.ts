@@ -7,6 +7,6 @@ dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
+  await app.listen(process.env.API_GATEWAY_PORT ?? 3012);
 }
 bootstrap();

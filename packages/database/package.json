@@ -23,7 +23,8 @@
     "build": "tsc -p tsconfig.json",
     "check-types": "tsc --noEmit -p tsconfig.json",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx ./src/seed.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.39.3",
@@ -35,6 +36,7 @@
     "dotenv": "^16.4.7",
     "dotenv-expand": "^13.0.0",
     "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.3",
     "typescript": "5.9.2"
   }
 }

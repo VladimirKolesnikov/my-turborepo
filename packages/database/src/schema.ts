@@ -8,6 +8,7 @@ import {
   varchar,
   vector,
   text,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -52,7 +53,6 @@ export const users = pgTable("users", {
   }).default("0"),
   ...timestamps(),
 });
-
 
 export const wallets = pgTable("wallets", {
   id: id(),
@@ -206,3 +206,4 @@ export const embeddingsRelations = relations(
     }),
   }),
 );
+
