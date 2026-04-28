@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { QueueModule } from './queue-processor/queue.module';
 import { LlmModule } from './llm/llm.module';
 import { TestModule } from './test/test.module';
+import { ConfirmationModule } from './confirmation-processor/confirmation.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TestModule } from './test/test.module';
     LlmModule,
     AiProcessorModule,
     QueueModule,
+    ConfirmationModule,
     TestModule,
   ],
   controllers: [AppController],
