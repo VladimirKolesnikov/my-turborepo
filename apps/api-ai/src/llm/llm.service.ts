@@ -2,20 +2,30 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OpenRouter } from '@openrouter/sdk';
 import { z } from 'zod';
 import { CLEAN_USER_MESSAGE_PROMPT } from './prompts/clean-user-message';
-import { CATEGORIZE_TRANSACTION_PROMPT } from './prompts/categorize-transaction';
+import { PARSE_FINANCIAL_MESSAGE_PROMPT } from './prompts/parse-financial-message';
 
 export interface RagContextItem {
   content: string;
   confirmedCategoryName: string;
 }
 
-const CategorizedTransactionSchema = z.object({
-  categoryName: z.string().min(1),
+const FinancialEventSchema = z.object({
   description: z.string().min(1),
+  amount: z.number().positive(),
+  type: z.enum(['income', 'expense']),
+  category: z.string().min(1),
   confidence: z.number().min(0).max(1),
 });
 
-export type CategorizedTransaction = z.infer<typeof CategorizedTransactionSchema>;
+const ParsedFinancialMessageSchema = z.object({
+  wallet_balance_after: z.number(),
+  total_income: z.number().min(0),
+  total_expenses: z.number().min(0),
+  events: z.array(FinancialEventSchema).min(1),
+});
+
+export type FinancialEvent = z.infer<typeof FinancialEventSchema>;
+export type ParsedFinancialMessage = z.infer<typeof ParsedFinancialMessageSchema>;
 
 const RETRY_DELAYS_MS = [3000, 8000, 20000]; // 3s, 8s, 20s
 
@@ -124,11 +134,13 @@ export class LlmService {
     return embedding as number[];
   }
 
-  async categorizeTransaction(
+  async parseFinancialMessage(
     cleanedText: string,
+    walletBalance: string,
+    currency: string,
     ragContext: RagContextItem[],
-  ): Promise<CategorizedTransaction> {
-    this.logger.debug('Categorizing transaction');
+  ): Promise<ParsedFinancialMessage> {
+    this.logger.debug('Parsing financial message');
 
     const contextBlock =
       ragContext.length > 0
@@ -137,30 +149,51 @@ export class LlmService {
             .join('\n')
         : 'No past examples available.';
 
-    const userMessage = `Past confirmed transactions:\n${contextBlock}\n\nNew transaction to categorize:\n"${cleanedText}"`;
+    const userMessage = `Current wallet balance: ${walletBalance} ${currency}
 
-    const result = await this.withRetry('categorizeTransaction', () =>
+Past confirmed categories (use these for consistent naming):
+${contextBlock}
+
+Financial information to analyze:
+"${cleanedText}"`;
+
+    this.logger.debug(`[parseFinancialMessage] wallet balance sent to LLM: ${walletBalance} ${currency}`);
+    this.logger.debug(`[parseFinancialMessage] user message:\n${userMessage}`);
+
+    const result = await this.withRetry('parseFinancialMessage', () =>
       this.client.chat.send({
         chatRequest: {
           model: this.chatModel,
           messages: [
-            { role: 'system', content: CATEGORIZE_TRANSACTION_PROMPT },
+            { role: 'system', content: PARSE_FINANCIAL_MESSAGE_PROMPT },
             { role: 'user', content: userMessage },
           ],
           temperature: 0,
-          responseFormat: { type: 'json_object' },
         },
       }),
     );
 
     const text = result.choices[0]?.message?.content;
     if (typeof text !== 'string' || text.trim() === '') {
-      throw new Error('LLM returned empty response for categorizeTransaction');
+      throw new Error('LLM returned empty response for parseFinancialMessage');
     }
 
-    const parsed: unknown = JSON.parse(text);
-    // Some models return an array despite json_object being requested — unwrap it.
-    const candidate = Array.isArray(parsed) ? parsed[0] : parsed;
-    return CategorizedTransactionSchema.parse(candidate);
+    this.logger.debug(`[parseFinancialMessage] raw LLM response:\n${text}`);
+
+    const resultMatch = text.match(/<result>([\s\S]*?)<\/result>/);
+    if (!resultMatch?.[1]) {
+      throw new Error('LLM response did not contain a <result> block');
+    }
+
+    this.logger.debug(`[parseFinancialMessage] extracted <result> block:\n${resultMatch[1].trim()}`);
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(resultMatch[1].trim());
+    } catch {
+      throw new Error(`Failed to parse JSON from LLM <result> block`);
+    }
+
+    return ParsedFinancialMessageSchema.parse(parsed);
   }
 }

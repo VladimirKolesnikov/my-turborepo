@@ -11,11 +11,16 @@ import { DatabaseService } from '../database/database.service';
 import { AiProcessorService, ProcessedTransactionResult } from '../ai-processor/ai-processor.service';
 
 const MOCK_MESSAGES = [
-  "Today I went for a walk with my dog. Later met friends at a bar and spent $100 there.",
-  "Bought groceries at the supermarket for $45.50. Also grabbed a coffee for $4.",
-  "Got my salary deposited — $3200. Then paid $800 for rent.",
-  "Had a great birthday party! Friends paid for my dinner. Later I took an Uber for $18.",
-  "Went to the gym, monthly membership cost me $35. Bought a protein shake for $8.",
+  // "Today I went for a walk with my dog. Later met friends at a bar and spent $100 there.",
+  // "Bought groceries at the supermarket for $45.50. Also grabbed a coffee for $4.",
+  // "Got my salary deposited — $3200. Then paid $800 for rent.",
+  // "Had a great birthday party! Friends paid for my dinner. Later I took an Uber for $18.",
+  // "Went to the gym, monthly membership cost me $35. Bought a protein shake for $8.",
+  // "Today was a great day, I bought t-shirt and pen for $100, t-shirt was cost of 20 percent on all amount spent to clothes, that I spent last week, so in total I spent a $255 dollars. Then I drunk coffee with my girlfriend and bough fish for a dinner. That's it",
+
+  'So, today was a great day. I went for a walk with my gf and gifted a flowers for her.' +
+    'I got a $1250 this month on my job, flower costs $55. Then we went in a cafe and I spent a 2% from my monthly salary there, dinner was delicious.' +
+    'After dinner we bought some groceries and clothes, so it costs a $110',
 ];
 
 @Injectable()
