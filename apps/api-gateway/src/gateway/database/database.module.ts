@@ -1,16 +1,9 @@
-import { Module } from '@nestjs/common';
-import { createDatabase } from '@repo/database';
-import { DATABASE_CONNECTION } from './database.constants';
+import { Global, Module } from '@nestjs/common';
+import { DatabaseService } from './database.service';
 
+@Global()
 @Module({
-  providers: [
-    {
-      provide: DATABASE_CONNECTION,
-      useFactory: () => {
-        return createDatabase();
-      },
-    },
-  ],
-  exports: [DATABASE_CONNECTION],
+  providers: [DatabaseService],
+  exports: [DatabaseService],
 })
 export class DatabaseModule {}

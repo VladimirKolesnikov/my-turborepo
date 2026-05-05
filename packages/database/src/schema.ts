@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   numeric,
   pgTable,
@@ -42,6 +43,8 @@ export const users = pgTable("users", {
   username: varchar("username", { length: 255 }).notNull().unique(),
   email: varchar("email", { length: 255 }).unique(),
   passwordHash: text("password_hash"),
+  isActivated: boolean("is_activated").default(false).notNull(),
+  activationLink: uuid("activation_link").defaultRandom(),
   totalSpendings: numeric("total_spendings", {
     precision: 14,
     scale: 2,
@@ -50,6 +53,16 @@ export const users = pgTable("users", {
     precision: 14,
     scale: 2,
   }).default("0"),
+  ...timestamps(),
+});
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: id(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: false }).notNull(),
   ...timestamps(),
 });
 
@@ -203,6 +216,14 @@ export const usersRelations = relations(users, ({ many }) => ({
   processingRequests: many(processingRequests),
   transactions: many(transactions),
   embeddings: many(transactionEmbeddings),
+  refreshTokens: many(refreshTokens),
+}));
+
+export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [refreshTokens.userId],
+    references: [users.id],
+  }),
 }));
 
 export const walletsRelations = relations(wallets, ({ one, many }) => ({

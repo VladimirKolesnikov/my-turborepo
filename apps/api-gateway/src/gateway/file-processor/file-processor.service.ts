@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
@@ -11,9 +11,8 @@ import {
   ProcessingRequestsRepository,
   TRANSACTION_STATUS_PENDING,
   TransactionsRepository,
-  type databaseType,
 } from '@repo/database';
-import { DATABASE_CONNECTION } from '../database/database.constants';
+import { DatabaseService } from '../database/database.service';
 import { TRANSACTIONS_QUEUE } from '../queue/queue.constants';
 import { TxtParserStrategy } from './strategies/txt-parser.strategy';
 import { CsvParserStrategy } from './strategies/csv-parser.strategy';
@@ -31,13 +30,12 @@ export class FileProcessorService {
   constructor(
     private readonly txtStrategy: TxtParserStrategy,
     private readonly csvStrategy: CsvParserStrategy,
-    @Inject(DATABASE_CONNECTION)
-    private readonly db: databaseType,
+    private readonly databaseService: DatabaseService,
     @InjectQueue(TRANSACTIONS_QUEUE)
     private readonly transactionsQueue: Queue,
   ) {
-    this.processingRequestsRepository = new ProcessingRequestsRepository(db);
-    this.transactionsRepository = new TransactionsRepository(db);
+    this.processingRequestsRepository = new ProcessingRequestsRepository(databaseService.db);
+    this.transactionsRepository = new TransactionsRepository(databaseService.db);
   }
 
   async processText(

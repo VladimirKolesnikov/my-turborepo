@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
@@ -9,10 +9,9 @@ import {
   transactions,
   TRANSACTION_STATUS_CONFIRMED,
   TransactionsRepository,
-  databaseType,
 } from '@repo/database';
 import { TRANSACTION_CONFIRMATION_QUEUE } from '@repo/constants';
-import { DATABASE_CONNECTION } from '../database/database.constants';
+import { DatabaseService } from '../database/database.service';
 
 export interface ConfirmTransactionDto {
   categoryName: string;
@@ -26,12 +25,12 @@ export class ConfirmationService {
   private readonly transactionReviewsRepository: TransactionReviewsRepository;
 
   constructor(
-    @Inject(DATABASE_CONNECTION) private readonly db: databaseType,
+    private readonly databaseService: DatabaseService,
     @InjectQueue(TRANSACTION_CONFIRMATION_QUEUE) private readonly confirmationQueue: Queue,
   ) {
-    this.categoriesRepository = new CategoriesRepository(db);
-    this.transactionsRepository = new TransactionsRepository(db);
-    this.transactionReviewsRepository = new TransactionReviewsRepository(db);
+    this.categoriesRepository = new CategoriesRepository(databaseService.db);
+    this.transactionsRepository = new TransactionsRepository(databaseService.db);
+    this.transactionReviewsRepository = new TransactionReviewsRepository(databaseService.db);
   }
 
   async confirm(
@@ -44,7 +43,7 @@ export class ConfirmationService {
       );
     }
 
-    const [existing] = await this.db
+    const [existing] = await this.databaseService.db
       .select({ id: transactions.id, userId: transactions.userId })
       .from(transactions)
       .where(eq(transactions.id, transactionId));
