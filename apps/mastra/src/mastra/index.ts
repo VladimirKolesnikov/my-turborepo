@@ -9,7 +9,7 @@ import {
   listPendingReviewsTool,
   listRecentTransactionsTool,
   submitTextTransactionTool,
-} from "./tools/gateway-tools";
+} from "./tools/gateway-tools.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(currentDir, "../../../../.env") });

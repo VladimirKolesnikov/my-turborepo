@@ -2,7 +2,10 @@
   "extends": "@repo/typescript-config/node-library.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
