@@ -14,3 +14,16 @@ export const TRANSACTION_STATUS_FAILED = "failed";
 
 export const CATEGORY_TYPE_EXPENSE = "expense";
 export const CATEGORY_TYPE_INCOME = "income";
+
+export const PROCESSING_REQUEST_STATUS_QUEUED = "queued";
+export const PROCESSING_REQUEST_STATUS_PROCESSING = "processing";
+export const PROCESSING_REQUEST_STATUS_REVIEW_READY = "review_ready";
+export const PROCESSING_REQUEST_STATUS_FAILED = "failed";
+
+export const PROCESSING_SOURCE_TYPE_TEXT = "text";
+export const PROCESSING_SOURCE_TYPE_TXT_FILE = "txt_file";
+export const PROCESSING_SOURCE_TYPE_CSV_FILE = "csv_file";
+
+export const REVIEW_DECISION_PENDING = "pending";
+export const REVIEW_DECISION_CONFIRMED = "confirmed";
+export const REVIEW_DECISION_REJECTED = "rejected";

@@ -1,7 +1,15 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
+  CATEGORY_TYPE_EXPENSE,
+  CATEGORY_TYPE_INCOME,
   eq,
+  PROCESSING_REQUEST_STATUS_PROCESSING,
+  PROCESSING_REQUEST_STATUS_REVIEW_READY,
+  ProcessingRequestsRepository,
+  REVIEW_DECISION_PENDING,
   sql,
+  TransactionReviewsRepository,
+  TransactionsRepository,
   transactions,
   transactionEmbeddings,
   wallets,
@@ -31,11 +39,22 @@ export interface ProcessedTransactionResult {
 @Injectable()
 export class AiProcessorService {
   private readonly logger = new Logger(AiProcessorService.name);
+  private readonly processingRequestsRepository: ProcessingRequestsRepository;
+  private readonly transactionsRepository: TransactionsRepository;
+  private readonly transactionReviewsRepository: TransactionReviewsRepository;
 
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly llmService: LlmService,
-  ) {}
+  ) {
+    this.processingRequestsRepository = new ProcessingRequestsRepository(
+      databaseService.db,
+    );
+    this.transactionsRepository = new TransactionsRepository(databaseService.db);
+    this.transactionReviewsRepository = new TransactionReviewsRepository(
+      databaseService.db,
+    );
+  }
 
   async process(transactionId: string): Promise<ProcessedTransactionResult> {
     this.logger.log(`Processing transaction ${transactionId}`);
@@ -49,6 +68,13 @@ export class AiProcessorService {
 
     if (!transaction) {
       throw new NotFoundException(`Transaction ${transactionId} not found`);
+    }
+
+    if (transaction.processingRequestId) {
+      await this.processingRequestsRepository.updateStatus(
+        transaction.processingRequestId,
+        PROCESSING_REQUEST_STATUS_PROCESSING,
+      );
     }
 
     const [wallet] = await db
@@ -100,33 +126,43 @@ export class AiProcessorService {
       const event = parsed.events[i]!;
 
       if (i === 0) {
-        await db
-          .update(transactions)
-          .set({
-            amount: String(event.amount),
-            statusCode: TRANSACTION_STATUS_PENDING_CONFIRMATION,
-          })
-          .where(eq(transactions.id, transactionId));
+        await this.transactionsRepository.updateProcessed(transactionId, {
+          amount: String(event.amount),
+          typeCode:
+            event.type === 'income' ? CATEGORY_TYPE_INCOME : CATEGORY_TYPE_EXPENSE,
+          statusCode: TRANSACTION_STATUS_PENDING_CONFIRMATION,
+        });
 
         this.logger.log(`[step 6.${i}] updated existing transaction ${transactionId}: amount=${event.amount} category=${event.category}`);
         eventTransactionIds.push(transactionId);
       } else {
-        const [newTx] = await db
-          .insert(transactions)
-          .values({
-            userId: transaction.userId,
-            walletId: transaction.walletId,
-            amount: String(event.amount),
-            currency: transaction.currency,
-            rawContent: transaction.rawContent,
-            statusCode: TRANSACTION_STATUS_PENDING_CONFIRMATION,
-          })
-          .returning({ id: transactions.id });
+        const newTx = await this.transactionsRepository.createPending({
+          userId: transaction.userId,
+          walletId: transaction.walletId,
+          processingRequestId: transaction.processingRequestId,
+          amount: String(event.amount),
+          currency: transaction.currency,
+          rawContent: transaction.rawContent,
+          statusCode: TRANSACTION_STATUS_PENDING_CONFIRMATION,
+        });
+        await this.transactionsRepository.updateProcessed(newTx.id, {
+          amount: String(event.amount),
+          typeCode:
+            event.type === 'income' ? CATEGORY_TYPE_INCOME : CATEGORY_TYPE_EXPENSE,
+          statusCode: TRANSACTION_STATUS_PENDING_CONFIRMATION,
+        });
 
-        if (!newTx) throw new Error(`Failed to insert transaction for event ${i}`);
         this.logger.log(`[step 6.${i}] inserted new transaction ${newTx.id}: amount=${event.amount} category=${event.category}`);
         eventTransactionIds.push(newTx.id);
       }
+
+      await this.transactionReviewsRepository.upsertProposal({
+        transactionId: eventTransactionIds[i]!,
+        proposedCategoryName: event.category,
+        proposedDescription: event.description,
+        confidence: String(event.confidence),
+        decisionStatus: REVIEW_DECISION_PENDING,
+      });
     }
 
     await db
@@ -154,6 +190,13 @@ export class AiProcessorService {
     this.logger.log(
       `[done] transaction ${transactionId} — ${parsed.events.length} event(s), wallet: ${parsed.wallet_balance_after}, categories: ${JSON.stringify(categories)}`,
     );
+
+    if (transaction.processingRequestId) {
+      await this.processingRequestsRepository.updateStatus(
+        transaction.processingRequestId,
+        PROCESSING_REQUEST_STATUS_REVIEW_READY,
+      );
+    }
 
     return {
       walletBalanceAfter: parsed.wallet_balance_after,

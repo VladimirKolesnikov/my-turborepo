@@ -84,6 +84,21 @@ export const categories = pgTable("categories", {
   ...timestamps(),
 });
 
+export const processingRequests = pgTable("processing_requests", {
+  id: id(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, {
+      onDelete: "cascade",
+    }),
+  sourceType: varchar("source_type", { length: 50 }).notNull(),
+  sourceName: varchar("source_name", { length: 255 }),
+  rawContent: text("raw_content").notNull(),
+  statusCode: varchar("status_code", { length: 50 }).notNull(),
+  errorMessage: text("error_message"),
+  ...timestamps(),
+});
+
 export const transactions = pgTable("transactions", {
   id: id(),
   userId: uuid("user_id")
@@ -99,10 +114,17 @@ export const transactions = pgTable("transactions", {
   categoryId: uuid("category_id").references(() => categories.id, {
     onDelete: "set null",
   }),
+  processingRequestId: uuid("processing_request_id").references(
+    () => processingRequests.id,
+    {
+      onDelete: "set null",
+    },
+  ),
   amount: numeric("amount", {
     precision: 14,
     scale: 2,
   }),
+  typeCode: varchar("type_code", { length: 50 }).references(() => categoryTypes.code),
   currency: varchar("currency", { length: 10 }).default("USD").notNull(),
   rawContent: text("raw_content").notNull(),
   statusCode: varchar("status_code", { length: 50 })
@@ -147,9 +169,38 @@ export const transactionEmbeddings = pgTable(
   }),
 );
 
+export const transactionReviews = pgTable(
+  "transaction_reviews",
+  {
+    id: id(),
+    transactionId: uuid("transaction_id")
+      .notNull()
+      .references(() => transactions.id, {
+        onDelete: "cascade",
+      }),
+    proposedCategoryName: varchar("proposed_category_name", {
+      length: 255,
+    }).notNull(),
+    proposedDescription: text("proposed_description").notNull(),
+    confidence: numeric("confidence", { precision: 5, scale: 4 }).notNull(),
+    finalCategoryName: varchar("final_category_name", {
+      length: 255,
+    }),
+    finalDescription: text("final_description"),
+    decisionStatus: varchar("decision_status", { length: 50 }).notNull(),
+    ...timestamps(),
+  },
+  (table) => ({
+    transactionIdIdx: uniqueIndex("transaction_reviews_transaction_id_uidx").on(
+      table.transactionId,
+    ),
+  }),
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   wallets: many(wallets),
   categories: many(categories),
+  processingRequests: many(processingRequests),
   transactions: many(transactions),
   embeddings: many(transactionEmbeddings),
 }));
@@ -170,6 +221,17 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   transactions: many(transactions),
 }));
 
+export const processingRequestsRelations = relations(
+  processingRequests,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [processingRequests.userId],
+      references: [users.id],
+    }),
+    transactions: many(transactions),
+  }),
+);
+
 export const transactionsRelations = relations(transactions, ({ one }) => ({
   user: one(users, {
     fields: [transactions.userId],
@@ -186,9 +248,19 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
     references: [categories.id],
   }),
 
+  processingRequest: one(processingRequests, {
+    fields: [transactions.processingRequestId],
+    references: [processingRequests.id],
+  }),
+
   embedding: one(transactionEmbeddings, {
     fields: [transactions.id],
     references: [transactionEmbeddings.transactionId],
+  }),
+
+  review: one(transactionReviews, {
+    fields: [transactions.id],
+    references: [transactionReviews.transactionId],
   }),
 }));
 
@@ -202,6 +274,16 @@ export const embeddingsRelations = relations(
 
     transaction: one(transactions, {
       fields: [transactionEmbeddings.transactionId],
+      references: [transactions.id],
+    }),
+  }),
+);
+
+export const transactionReviewsRelations = relations(
+  transactionReviews,
+  ({ one }) => ({
+    transaction: one(transactions, {
+      fields: [transactionReviews.transactionId],
       references: [transactions.id],
     }),
   }),
