@@ -11,6 +11,7 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@mastra/client-js": "^1.16.0",
     "@repo/ui": "workspace:*",
     "next": "16.2.0",
     "react": "^19.2.0",

@@ -30,6 +30,7 @@ export class AppController {
       BOOTSTRAP_USER_ID,
       file.mimetype,
       file.buffer,
+      file.originalname,
     );
 
     return result;
