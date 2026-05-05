@@ -1,22 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   ProcessingRequestsRepository,
   TransactionsRepository,
-  type databaseType,
 } from '@repo/database';
-import { DATABASE_CONNECTION } from '../database/database.constants';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class WorkspaceService {
   private readonly processingRequestsRepository: ProcessingRequestsRepository;
   private readonly transactionsRepository: TransactionsRepository;
 
-  constructor(
-    @Inject(DATABASE_CONNECTION)
-    private readonly db: databaseType,
-  ) {
-    this.processingRequestsRepository = new ProcessingRequestsRepository(db);
-    this.transactionsRepository = new TransactionsRepository(db);
+  constructor(private readonly databaseService: DatabaseService) {
+    this.processingRequestsRepository = new ProcessingRequestsRepository(databaseService.db);
+    this.transactionsRepository = new TransactionsRepository(databaseService.db);
   }
 
   async getProcessingRequestDetail(requestId: string) {

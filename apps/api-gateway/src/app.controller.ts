@@ -7,12 +7,7 @@ import { FileProcessorService } from './gateway/file-processor/file-processor.se
 export class AppController {
   constructor(
     private readonly fileProcessorService: FileProcessorService,
-  ) { }
-
-  @Get('hello')
-  hello() {
-    return "Hello";
-  }
+  ) {}
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
