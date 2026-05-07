@@ -8,7 +8,7 @@ expand(env);
 
 const databaseUrl = process.env.DATABASE_URL;
 
-if (!databaseUrl) throw new Error('Missing database url');
+if (!databaseUrl) throw new Error('Missing memory url');
 
 export default defineConfig({
   schema: "./src/schema.ts",

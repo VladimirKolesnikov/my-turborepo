@@ -12,7 +12,9 @@
     "test": "echo \"No tests configured for @repo/mastra\""
   },
   "dependencies": {
-    "@mastra/core": "^1.31.0",
+    "@mastra/core": "^1.32.1",
+    "@mastra/memory": "^1.17.5",
+    "@mastra/pg": "^1.10.0",
     "mastra": "^1.7.3",
     "zod": "^4.3.6"
   },

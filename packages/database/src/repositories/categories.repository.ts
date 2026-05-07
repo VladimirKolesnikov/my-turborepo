@@ -1,7 +1,7 @@
 import { and, eq, ilike } from "drizzle-orm";
 import type { databaseType } from "../index";
 import { categories } from "../schema";
-import { CATEGORY_TYPE_EXPENSE } from "../bootstrap";
+import { CATEGORY_TYPE_EXPENSE } from "../constants/bootstrap";
 
 export class CategoriesRepository {
   constructor(private readonly db: databaseType) {}

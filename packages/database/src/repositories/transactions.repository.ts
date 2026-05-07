@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { databaseType } from "../index";
 import { categories, transactionReviews, transactions } from "../schema";
-import { REVIEW_DECISION_PENDING, TRANSACTION_STATUS_PENDING } from "../bootstrap";
+import { REVIEW_DECISION_PENDING, TRANSACTION_STATUS_PENDING } from "../constants/bootstrap";
 
 type CreatePendingTransactionInput = {
   userId: string;

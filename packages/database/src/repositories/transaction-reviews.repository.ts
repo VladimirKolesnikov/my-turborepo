@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { databaseType } from "../index";
 import { transactionReviews } from "../schema";
-import { REVIEW_DECISION_PENDING } from "../bootstrap";
+import { REVIEW_DECISION_PENDING } from "../constants/bootstrap";
 
 type UpsertReviewProposalInput = {
   transactionId: string;
