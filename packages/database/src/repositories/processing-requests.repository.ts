@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { databaseType } from "../index";
 import { processingRequests } from "../schema";
-import { PROCESSING_REQUEST_STATUS_QUEUED } from "../bootstrap";
+import { PROCESSING_REQUEST_STATUS_QUEUED } from "../constants/bootstrap";
 
 type CreateProcessingRequestInput = {
   userId: string;

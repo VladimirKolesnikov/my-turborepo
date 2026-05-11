@@ -10,6 +10,8 @@
     "test": "turbo run test",
     "db:generate": "pnpm --filter @repo/database db:generate",
     "db:migrate": "pnpm --filter @repo/database db:migrate",
+    "db:generate:mastra": "pnpm --filter @repo/database db:generate:mastra",
+    "db:migrate:mastra": "pnpm --filter @repo/database db:migrate:mastra",
     "db:seed": "pnpm --filter @repo/database db:seed"
   },
   "devDependencies": {
